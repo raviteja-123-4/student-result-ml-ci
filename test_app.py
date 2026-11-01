@@ -1,4 +1,4 @@
-﻿import unittest
+import unittest
 
 from app import app
 
@@ -11,7 +11,7 @@ class TestPredictionApplication(unittest.TestCase):
     def test_health_endpoint(self):
         response = self.client.get("/")
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
 
     def test_high_performance_prediction(self):
@@ -25,7 +25,7 @@ class TestPredictionApplication(unittest.TestCase):
             }
         )
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get_json()["prediction"],
             "PASS"
@@ -42,7 +42,7 @@ class TestPredictionApplication(unittest.TestCase):
             }
         )
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get_json()["prediction"],
             "FAIL"
@@ -66,4 +66,3 @@ class TestPredictionApplication(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
