@@ -12,7 +12,10 @@ except Exception:
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({
+        "status": "healthy",
+        "service": "student-result-prediction"
+    }), 200
 
 @app.route("/predict", methods=["POST"])
 def predict():
