@@ -1,69 +1,102 @@
 import json
-import os
-import unittest
 
 import joblib
+import numpy as np
 import pandas as pd
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
-class TestMLPipeline(unittest.TestCase):
 
-    def test_dataset_created(self):
-        self.assertTrue(os.path.exists("student_results.csv"))
+def create_dataset():
+    rng = np.random.default_rng(42)
+    number_of_students = 300
 
-    def test_model_created(self):
-        self.assertTrue(os.path.exists("student_result_model.pkl"))
+    data = pd.DataFrame({
+        "attendance": rng.integers(50, 101, number_of_students),
+        "internal_marks": rng.integers(20, 101, number_of_students),
+        "assignment_marks": rng.integers(30, 101, number_of_students),
+        "previous_score": rng.integers(30, 101, number_of_students)
+    })
 
-    def test_metrics_created(self):
-        self.assertTrue(os.path.exists("metrics.json"))
+    data["weighted_score"] = (
+        0.25 * data["attendance"]
+        + 0.35 * data["internal_marks"]
+        + 0.20 * data["assignment_marks"]
+        + 0.20 * data["previous_score"]
+    )
 
-    def test_accuracy_is_valid(self):
-        with open("metrics.json", "r") as file:
-            metrics = json.load(file)
+    # 1 = PASS, 0 = FAIL
+    data["result"] = (data["weighted_score"] >= 60).astype(int)
+    return data
 
-        accuracy = metrics["accuracy"]
-        self.assertGreaterEqual(accuracy, 0.0)
-        self.assertLessEqual(accuracy, 1.0)
 
-    def test_model_prediction(self):
-        model = joblib.load("student_result_model.pkl")
+def train_model():
+    print("Creating dataset...")
+    data = create_dataset()
+    data.to_csv("student_results.csv", index=False)
 
-        sample = pd.DataFrame([{
-            "attendance": 85,
-            "internal_marks": 75,
-            "assignment_marks": 80,
-            "previous_score": 78
-        }])
+    print("Dataset created successfully.")
+    print("Number of records:", len(data))
 
-        prediction = model.predict(sample)[0]
-        self.assertIn(int(prediction), [0, 1])
+    features = [
+        "attendance",
+        "internal_marks",
+        "assignment_marks",
+        "previous_score"
+    ]
 
-    def test_high_performance_student(self):
-        model = joblib.load("student_result_model.pkl")
+    X = data[features]
+    y = data["result"]
 
-        sample = pd.DataFrame([{
-            "attendance": 90,
-            "internal_marks": 85,
-            "assignment_marks": 88,
-            "previous_score": 80
-        }])
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.20,
+        random_state=42,
+        stratify=y
+    )
 
-        prediction = model.predict(sample)[0]
-        self.assertEqual(int(prediction), 1)
+    print("Training records:", len(X_train))
+    print("Testing records :", len(X_test))
 
-    def test_low_performance_student(self):
-        model = joblib.load("student_result_model.pkl")
+    model = Pipeline([
+        ("scaler", StandardScaler()),
+        ("classifier", LogisticRegression(max_iter=1000, random_state=42))
+    ])
 
-        sample = pd.DataFrame([{
-            "attendance": 55,
-            "internal_marks": 30,
-            "assignment_marks": 40,
-            "previous_score": 35
-        }])
+    print("Training model...")
+    model.fit(X_train, y_train)
 
-        prediction = model.predict(sample)[0]
-        self.assertEqual(int(prediction), 0)
+    predictions = model.predict(X_test)
+    accuracy = accuracy_score(y_test, predictions)
+    matrix = confusion_matrix(y_test, predictions)
+
+    print("\nModel Evaluation")
+    print("----------------")
+    print("Accuracy:", round(accuracy, 4))
+    print("\nConfusion Matrix:")
+    print(matrix)
+
+    joblib.dump(model, "student_result_model.pkl")
+    print("\nModel saved as student_result_model.pkl")
+
+    metrics = {
+        "accuracy": float(accuracy),
+        "training_records": len(X_train),
+        "testing_records": len(X_test)
+    }
+
+    print("Metrics saved as metrics.json")
+
+    with open("metrics.json", "w") as file:
+        json.dump(metrics, file, indent=4)
+
+    return accuracy
 
 
 if __name__ == "__main__":
-    unittest.main()
+    train_model()

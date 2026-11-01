@@ -1,3 +1,4 @@
+
 import json
 import sys
 
@@ -10,7 +11,7 @@ with open("metrics.json", "r") as file:
 
 accuracy = metrics["accuracy"]
 
-print("Model Accuracy   :", round(accuracy, 4))
+print("Model Accuracy :", round(accuracy, 4))
 print("Required Accuracy:", MINIMUM_ACCURACY)
 
 if accuracy < MINIMUM_ACCURACY:
