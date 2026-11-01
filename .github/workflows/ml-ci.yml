@@ -1,4 +1,4 @@
-﻿name: Student Result ML CI
+﻿name: Student Result ML CI-CD with Docker and GHCR
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  train-and-test:
+  train-test-docker:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,7 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-      - name: Install ML dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Train student result model
@@ -50,12 +50,14 @@ jobs:
           cp student_result_model.pkl release_candidate/
           cp metrics.json release_candidate/
           cp requirements.txt release_candidate/
-          printf "Student Result Prediction ML Application v1.0\nRun: python app.py\nEndpoint: POST /predict\n" > release_candidate/DEPLOYMENT.txt
+          cp Dockerfile release_candidate/
+          cp .dockerignore release_candidate/
+          printf "Student Result Prediction ML Application\nRun: python app.py\nEndpoint: POST /predict\nDocker image: student-result-ml:latest\n" > release_candidate/DEPLOYMENT.txt
 
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: student-result-ml-release
+          name: student-result-ml-docker-release
           path: release_candidate/
           if-no-files-found: error
           retention-days: 7
